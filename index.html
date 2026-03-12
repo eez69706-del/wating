@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>غرفة الانتظار</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: rgba(255,255,255,0.06);
+    --border2: rgba(255,255,255,0.12);
+    --text: #f0f0f8;
+    --muted: #7070a0;
+    --accent: #c8102e;
+    --accent2: #ff2244;
+    --green: #22c55e;
+    --blue: #4488ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans Arabic', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Glow */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(200,16,46,0.12) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper { position: relative; z-index: 1; width: 100%; max-width: 460px; }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1rem;
+  }
+  .logo-icon {
+    width: 42px; height: 42px;
+    background: var(--accent);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+  .logo-text {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+  .header-sub {
+    font-size: 14px;
+    color: var(--muted);
+    font-weight: 300;
+  }
+
+  /* Card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  }
+
+  /* Screen management */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* Typography */
+  .card-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .card-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 1.75rem;
+    line-height: 1.6;
+  }
+
+  /* Buttons */
+  .btn {
+    width: 100%;
+    padding: 14px 20px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    transition: all 0.18s;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn:last-child { margin-bottom: 0; }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border2);
+  }
+  .btn-secondary:hover { border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    font-size: 13px;
+    padding: 10px;
+  }
+  .btn-ghost:hover { color: var(--text); border-color: var(--border2); }
+
+  /* Inputs */
+  .input-group { margin-bottom: 14px; }
+  .input-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: block; }
+  input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input:focus { border-color: rgba(200,16,46,0.5); box-shadow: 0 0 0 3px rgba(200,16,46,0.08); }
+  input::placeholder { color: var(--muted); }
+  input.code-input {
+    font-family: 'Space Mono', monospace;
+    font-size: 32px;
+    text-align: center;
+    letter-spacing: 12px;
+    padding: 16px;
+  }
+
+  /* Code display */
+  .code-display {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 14px;
+    padding: 1.5rem;
+    text-align: center;
+    margin-bottom: 1.25rem;
+    position: relative;
+  }
+  .code-display-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .code-display-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 52px;
+    font-weight: 700;
+    letter-spacing: 16px;
+    color: var(--text);
+    line-height: 1;
+    padding-right: 16px;
+  }
+  .code-copy-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1.25rem;
+  }
+  .code-small {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-family: 'Space Mono', monospace;
+    font-size: 18px;
+    letter-spacing: 6px;
+    color: var(--text);
+    text-align: center;
+  }
+  .copy-btn {
+    padding: 10px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 13px;
+    font-family: inherit;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .copy-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+
+  /* Status bar */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 1.25rem;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    flex-shrink: 0;
+    animation: blink 2s infinite;
+  }
+  .dot.red { background: var(--accent); }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* Participants */
+  .section-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .p-list { margin-bottom: 1.25rem; }
+  .p-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .p-item:last-child { border-bottom: none; }
+  .avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: rgba(68,136,255,0.15);
+    border: 1px solid rgba(68,136,255,0.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--blue);
+    flex-shrink: 0;
+  }
+  .p-name { flex: 1; }
+  .p-online {
+    font-size: 11px;
+    color: var(--green);
+    display: flex; align-items: center; gap: 4px;
+  }
+  .p-online::before { content:''; width:5px; height:5px; border-radius:50%; background:var(--green); }
+
+  /* Notifications */
+  .notif-list { margin-top: 4px; }
+  .notif-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: rgba(200,16,46,0.06);
+    border: 1px solid rgba(200,16,46,0.15);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    animation: slideIn 0.3s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: none; }
+  }
+  .notif-bell { font-size: 18px; }
+  .notif-body { flex: 1; }
+  .notif-name { font-size: 14px; font-weight: 500; }
+  .notif-time { font-size: 11px; color: var(--muted); margin-top: 2px; font-family: 'Space Mono', monospace; }
+  .notif-tag {
+    font-size: 11px;
+    padding: 3px 10px;
+    background: rgba(200,16,46,0.15);
+    color: #ff6680;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+  .empty-state {
+    text-align: center;
+    padding: 2rem 0;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .empty-state .e-icon { font-size: 32px; margin-bottom: 8px; }
+
+  /* Divider */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 1.25rem 0;
+  }
+
+  /* Error */
+  .err-msg {
+    color: #ff6680;
+    font-size: 13px;
+    text-align: center;
+    margin-bottom: 12px;
+    min-height: 20px;
+  }
+
+  /* Red big button */
+  .big-red-btn {
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #ff2244, #8b0000);
+    border: 4px solid rgba(255,34,68,0.3);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 0 auto 1.5rem;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 0 40px rgba(200,16,46,0.35), 0 0 80px rgba(200,16,46,0.15);
+    position: relative;
+    overflow: hidden;
+  }
+  .big-red-btn::after {
+    content: '';
+    position: absolute;
+    top: 10%; left: 15%;
+    width: 40%; height: 25%;
+    background: rgba(255,255,255,0.12);
+    border-radius: 50%;
+    transform: rotate(-30deg);
+  }
+  .big-red-btn:hover {
+    transform: scale(1.04);
+    box-shadow: 0 0 60px rgba(200,16,46,0.5), 0 0 120px rgba(200,16,46,0.2);
+  }
+  .big-red-btn:active { transform: scale(0.93); }
+  .big-red-btn.pressed {
+    animation: btnPress 0.4s ease;
+  }
+  @keyframes btnPress {
+    0%{transform:scale(1)} 30%{transform:scale(0.88)} 70%{transform:scale(1.06)} 100%{transform:scale(1)}
+  }
+  .red-icon { font-size: 50px; }
+  .red-label { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: 1px; }
+
+  .press-status {
+    text-align: center;
+    font-size: 13px;
+    color: var(--green);
+    min-height: 22px;
+    margin-bottom: 1.25rem;
+    transition: opacity 0.3s;
+  }
+
+  /* Guest card */
+  .guest-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 1.5rem;
+  }
+  .guest-card .avatar { width: 40px; height: 40px; font-size: 15px; }
+  .guest-info-name { font-size: 15px; font-weight: 500; }
+  .guest-info-sub { font-size: 12px; color: var(--muted); margin-top: 2px; font-family: 'Space Mono', monospace; }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    margin-top: 2rem;
+    font-size: 12px;
+    color: rgba(112,112,160,0.5);
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">🎙</div>
+      <div class="logo-text">WaitRoom</div>
+    </div>
+    <div class="header-sub">نظام غرفة الانتظار المباشر</div>
+  </div>
+
+  <!-- ========= HOME ========= -->
+  <div class="card screen active" id="s-home">
+    <div class="card-title">مرحباً 👋</div>
+    <div class="card-sub">اختر دورك في الجلسة للمتابعة</div>
+    <button class="btn btn-primary" onclick="goHost()">🎙 أنا المقدم — ابدأ جلسة جديدة</button>
+    <button class="btn btn-secondary" onclick="showJoin()">🙋 أنا مشارك — عندي كود</button>
+  </div>
+
+  <!-- ========= HOST ========= -->
+  <div class="card screen" id="s-host">
+    <div class="card-title">لوحة المقدم</div>
+    <div class="card-sub">شارك الكود مع المشاركين لدخول الجلسة</div>
+
+    <div class="code-display">
+      <div class="code-display-label">كود الجلسة</div>
+      <div class="code-display-num" id="host-code-big">0000</div>
+    </div>
+
+    <div class="code-copy-row">
+      <div class="code-small" id="host-code-small">0000</div>
+      <button class="copy-btn" onclick="copyCode()">📋 نسخ</button>
+    </div>
+
+    <div class="status-bar">
+      <div class="dot"></div>
+      <span id="host-status-text">الجلسة نشطة — تنتظر المشاركين</span>
+    </div>
+
+    <div class="section-label">المشاركون</div>
+    <div class="p-list" id="host-participants">
+      <div class="empty-state"><div class="e-icon">👥</div>في انتظار المشاركين...</div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="section-label">الإشعارات</div>
+    <div class="notif-list" id="host-notifs">
+      <div class="empty-state"><div class="e-icon">🔕</div>لا يوجد إشعارات بعد</div>
+    </div>
+
+    <hr class="divider">
+    <button class="btn btn-ghost" onclick="goHome()">✕ إنهاء الجلسة</button>
+  </div>
+
+  <!-- ========= JOIN ========= -->
+  <div class="card screen" id="s-join">
+    <div class="card-title">دخول كمشارك</div>
+    <div class="card-sub">أدخل الكود الرباعي واسمك للدخول</div>
+    <div class="input-group">
+      <label class="input-label">كود الجلسة</label>
+      <input class="code-input" id="code-input" type="text" maxlength="4" placeholder="0000" oninput="this.value=this.value.replace(/\D/g,'')">
+    </div>
+    <div class="input-group">
+      <label class="input-label">اسمك</label>
+      <input id="name-input" type="text" placeholder="مثال: محمد" maxlength="20">
+    </div>
+    <div class="err-msg" id="join-err"></div>
+    <button class="btn btn-primary" onclick="joinRoom()">دخول الجلسة ←</button>
+    <button class="btn btn-ghost" onclick="goHome()">← رجوع</button>
+  </div>
+
+  <!-- ========= GUEST ========= -->
+  <div class="card screen" id="s-guest">
+    <div class="card-title" id="guest-title">مرحباً!</div>
+    <div class="card-sub">أنت داخل الجلسة. اضغط الزر لإشعار المقدم</div>
+
+    <div class="guest-card">
+      <div class="avatar" id="guest-av">؟</div>
+      <div>
+        <div class="guest-info-name" id="guest-name-label">—</div>
+        <div class="guest-info-sub">كود الجلسة: <span id="guest-code-label"></span></div>
+      </div>
+      <div class="p-online" style="margin-right:auto">متصل</div>
+    </div>
+
+    <button class="big-red-btn" id="red-btn" onclick="pressBtn()">
+      <span class="red-icon">📣</span>
+      <span class="red-label">نبّه المقدم</span>
+    </button>
+
+    <div class="press-status" id="press-status"></div>
+
+    <button class="btn btn-ghost" onclick="leaveRoom()">← مغادرة الجلسة</button>
+  </div>
+
+  <div class="footer">WaitRoom © 2025</div>
+</div>
+
+<script>
+const state = { code: null, guests: [], notifs: [], myName: '', myCode: '' };
+
+let audioCtx;
+function getAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playAlert() {
+  try {
+    const ctx = getAudio();
+    [[880,0],[660,0.15],[440,0.3]].forEach(([f,t]) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = f; o.type = 'sine';
+      g.gain.setValueAtTime(0, ctx.currentTime+t);
+      g.gain.linearRampToValueAtTime(0.35, ctx.currentTime+t+0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+t+0.25);
+      o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+0.28);
+    });
+  } catch(e){}
+}
+
+function playJoin() {
+  try {
+    const ctx = getAudio();
+    [[440,0],[550,0.1],[660,0.2]].forEach(([f,t]) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.25, ctx.currentTime+t);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+t+0.2);
+      o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+0.22);
+    });
+  } catch(e){}
+}
+
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function goHome() {
+  Object.assign(state, {code:null,guests:[],notifs:[],myName:'',myCode:''});
+  show('s-home');
+}
+
+function goHost() {
+  state.code = String(Math.floor(1000+Math.random()*9000));
+  state.guests=[]; state.notifs=[];
+  document.getElementById('host-code-big').textContent = state.code;
+  document.getElementById('host-code-small').textContent = state.code;
+  renderParticipants(); renderNotifs();
+  show('s-host');
+}
+
+function copyCode() {
+  navigator.clipboard?.writeText(state.code).catch(()=>{});
+  const b = document.querySelector('.copy-btn');
+  const orig = b.textContent;
+  b.textContent = '✓ تم النسخ';
+  setTimeout(()=>b.textContent=orig, 1800);
+}
+
+function showJoin() {
+  document.getElementById('code-input').value='';
+  document.getElementById('name-input').value='';
+  document.getElementById('join-err').textContent='';
+  show('s-join');
+}
+
+function joinRoom() {
+  const code = document.getElementById('code-input').value.trim();
+  const name = document.getElementById('name-input').value.trim();
+  const err = document.getElementById('join-err');
+  if (code.length<4) { err.textContent='الكود 4 أرقام'; return; }
+  if (!state.code) { err.textContent='لا توجد جلسة نشطة — المقدم لم يبدأ بعد'; return; }
+  if (code !== state.code) { err.textContent='الكود غير صحيح'; return; }
+  if (!name) { err.textContent='اكتب اسمك'; return; }
+  if (state.guests.length >= 2) { err.textContent='الغرفة ممتلئة (2/2)'; return; }
+  if (state.guests.find(g=>g.name===name)) { err.textContent='هذا الاسم مستخدم'; return; }
+  err.textContent='';
+  state.myName=name; state.myCode=code;
+  state.guests.push({name, initials: name.slice(0,2)});
+  document.getElementById('guest-title').textContent = 'أهلاً، ' + name + ' 👋';
+  document.getElementById('guest-name-label').textContent = name;
+  document.getElementById('guest-av').textContent = name.slice(0,2);
+  document.getElementById('guest-code-label').textContent = code;
+  document.getElementById('press-status').textContent = '';
+  renderParticipants();
+  playJoin();
+  show('s-guest');
+}
+
+function pressBtn() {
+  if (!state.code) return;
+  const btn = document.getElementById('red-btn');
+  btn.classList.add('pressed');
+  setTimeout(()=>btn.classList.remove('pressed'),400);
+  playAlert();
+  const now = new Date();
+  const t = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0')+':'+now.getSeconds().toString().padStart(2,'0');
+  state.notifs.unshift({name: state.myName, time: t});
+  const s = document.getElementById('press-status');
+  s.textContent = '✅ تم إرسال الإشعار للمقدم';
+  s.style.opacity='1';
+  setTimeout(()=>{ s.style.opacity='0'; setTimeout(()=>s.textContent='',400); }, 2500);
+  renderNotifs();
+  updateHostStatus();
+}
+
+function leaveRoom() {
+  state.guests = state.guests.filter(g=>g.name!==state.myName);
+  state.myName='';
+  renderParticipants();
+  show('s-home');
+}
+
+function renderParticipants() {
+  const el = document.getElementById('host-participants');
+  if (!state.guests.length) {
+    el.innerHTML = '<div class="empty-state"><div class="e-icon">👥</div>في انتظار المشاركين...</div>';
+    return;
+  }
+  el.innerHTML = state.guests.map(g =>
+    `<div class="p-item">
+      <div class="avatar">${g.initials}</div>
+      <span class="p-name">${g.name}</span>
+      <span class="p-online">متصل</span>
+    </div>`
+  ).join('');
+  updateHostStatus();
+}
+
+function renderNotifs() {
+  const el = document.getElementById('host-notifs');
+  if (!state.notifs.length) {
+    el.innerHTML = '<div class="empty-state"><div class="e-icon">🔕</div>لا يوجد إشعارات بعد</div>';
+    return;
+  }
+  el.innerHTML = state.notifs.slice(0,6).map(n =>
+    `<div class="notif-item">
+      <span class="notif-bell">🔔</span>
+      <div class="notif-body">
+        <div class="notif-name">${n.name}</div>
+        <div class="notif-time">${n.time}</div>
+      </div>
+      <span class="notif-tag">نبّه</span>
+    </div>`
+  ).join('');
+}
+
+function updateHostStatus() {
+  const el = document.getElementById('host-status-text');
+  if (!el) return;
+  const c = state.guests.length;
+  el.textContent = c===0 ? 'الجلسة نشطة — تنتظر المشاركين' :
+                   c===1 ? 'مشارك واحد متصل' : 'مشاركان متصلان — الغرفة ممتلئة';
+}
+</script>
+</body>
+</html>
